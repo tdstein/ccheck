@@ -9,15 +9,7 @@ import (
 
 func TestGetCCheckIgnore(t *testing.T) {
 	var afs = &afero.Afero{Fs: afero.NewMemMapFs()}
-	contents := []byte("ccheckignore")
-	afs.WriteFile(".ccheckignore", contents, 0644)
-	exp := &CCheckIgnore{contents: contents}
-	res, _ := GetCCheckIgnore(*afs)
+	exp := new(CCheckIgnore)
+	res := NewCCheckIgnore(*afs)
 	assert.Equal(t, exp, res)
-}
-
-func TestGetCCheckIgnore_Error(t *testing.T) {
-	var afs = &afero.Afero{Fs: afero.NewMemMapFs()}
-	_, err := GetCCheckIgnore(*afs)
-	assert.NotNil(t, err)
 }

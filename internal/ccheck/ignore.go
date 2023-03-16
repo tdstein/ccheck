@@ -3,54 +3,87 @@ package ccheck
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"log"
-	"os"
+	"strings"
 
+	"github.com/becheran/wildmatch-go"
 	"github.com/spf13/afero"
 )
 
-var filename string = ".ccheckignore"
+const CCheckIgnoreFileName string = ".ccheckignore"
 
 type CCheckIgnore struct {
-	contents []byte
+	lines []string
 }
 
-func walk(path string, info os.FileInfo, err error) error {
+func NewCCheckIgnore(afs afero.Afero) *CCheckIgnore {
+	exists, err := afs.Exists(CCheckIgnoreFileName)
 	if err != nil {
-		log.Fatal(err)
+		log.Panicf("failed to check file '%s', '%v'", CCheckIgnoreFileName, err)
 	}
-	fmt.Println(path)
-	return nil
+	if !exists {
+		log.Printf("'%s' not found", CCheckIgnoreFileName)
+		return new(CCheckIgnore)
+	}
+	return parse(afs)
 }
 
-func (ccheckignore CCheckIgnore) PrintEachFile(afs afero.Afero) (*CCheckIgnore, error) {
-	buffer := bytes.NewBuffer(ccheckignore.contents)
+func (ccheckignore CCheckIgnore) contains(path string) (bool, error) {
+	var hit bool
+	for _, pattern := range ccheckignore.lines {
+
+		// A blank line matches no files.
+		if len(pattern) == 0 || pattern == "" {
+			continue
+		}
+
+		// A line starting with # serves as a comment.
+		if pattern[0] == '#' {
+			continue
+		}
+
+		// A prefix "!" negates the pattern.
+		// Any matching file excluded by a previous pattern will become included again.
+		var negate bool
+		if pattern[0] == '!' {
+			pattern = pattern[1:]
+			negate = true
+		}
+
+		// If there is a separator at the beginning or middle (or both) of the
+		// pattern, then the pattern is relative to the directory level of the
+		// particular .ccheckignore file itself. Otherwise the pattern may also
+		// match at any level below the .ccheckignore level.
+		if !strings.Contains(pattern[:len(pattern)-1], "/") {
+			pattern = "*" + pattern
+		}
+
+		// If a match exists, set the hit flag according to the negation flag
+		pattern = pattern + "*"
+		wildmatcher := wildmatch.NewWildMatch(pattern)
+		if wildmatcher.IsMatch(path) {
+			if negate {
+				hit = false
+			} else {
+				hit = true
+			}
+		}
+	}
+	return hit, nil
+}
+
+func parse(afs afero.Afero) *CCheckIgnore {
+	contents, err := afs.ReadFile(CCheckIgnoreFileName)
+	if err != nil {
+		log.Panicf("failed to read file '%s', '%v'", CCheckIgnoreFileName, err)
+	}
+	buffer := bytes.NewBuffer(contents)
 	scanner := bufio.NewScanner(buffer)
+	ccheckignore := new(CCheckIgnore)
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches, err := afero.Glob(afs, line)
-		if err != nil {
-			log.Panicf("failed to glob '%v'", err)
-		}
-		for _, match := range matches {
-			afero.Walk(afs, match, walk)
-		}
-
+		line = strings.TrimSpace(line)
+		ccheckignore.lines = append(ccheckignore.lines, line)
 	}
-	return &ccheckignore, nil
-}
-
-func GetCCheckIgnore(afs afero.Afero) (*CCheckIgnore, error) {
-	exists, _ := afs.Exists(filename)
-	if !exists {
-		log.Printf("'%s' not found", filename)
-		contents := []byte{}
-		return &CCheckIgnore{contents: contents}, nil
-	}
-	contents, err := afs.ReadFile(filename)
-	if err != nil {
-		log.Panicf("failed to read file '%v'", err)
-	}
-	return &CCheckIgnore{contents: contents}, nil
+	return ccheckignore
 }

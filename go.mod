@@ -5,8 +5,10 @@ go 1.20
 require github.com/spf13/cobra v1.6.1
 
 require (
+	github.com/becheran/wildmatch-go v1.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
+	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
