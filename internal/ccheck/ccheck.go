@@ -2,35 +2,36 @@ package ccheck
 
 import (
 	"fmt"
-	"io/fs"
 	"log"
-	"path/filepath"
 
 	"github.com/spf13/afero"
 )
 
-func walk(afs afero.Afero) filepath.WalkFunc {
-	ccheckignore := NewCCheckIgnore(afs)
-	return func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			ignores, err := ccheckignore.contains(path)
-			if err != nil {
-				if err != nil {
-					log.Panicf("failed to process ignore for path '%s', '%v'", path, err)
-				}
-			}
-			if ignores {
-				// check for copyright
-				fmt.Println(path)
-			}
-		}
-		return nil
+type Application struct {
+	afs        afero.Afero
+	entrypoint string
+}
+
+func NewApplication(afs afero.Afero, entrypoint string) *Application {
+	return &Application{
+		afs:        afs,
+		entrypoint: entrypoint,
 	}
 }
 
-func CCheck() error {
-	var afs = &afero.Afero{Fs: afero.NewOsFs()}
-	walk := walk(*afs)
-	afs.Walk(".", walk)
-	return nil
+func (application Application) Execute() (int, error) {
+	service := &Service{
+		afs: application.afs,
+	}
+
+	files, err := service.GetFiles()
+	if err != nil {
+		log.Panic(err)
+	}
+
+	for _, file := range files {
+		fmt.Println(file)
+	}
+
+	return 0, nil
 }

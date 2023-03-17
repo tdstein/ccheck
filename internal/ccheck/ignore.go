@@ -4,40 +4,35 @@ import (
 	"bufio"
 	"bytes"
 	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/becheran/wildmatch-go"
 	"github.com/spf13/afero"
 )
 
-const CCheckIgnoreFileName string = ".ccheckignore"
-
-type CCheckIgnore struct {
-	lines []string
+type Ignore struct {
+	path     string
+	patterns []string
 }
 
-func NewCCheckIgnore(afs afero.Afero) *CCheckIgnore {
-	exists, err := afs.Exists(CCheckIgnoreFileName)
-	if err != nil {
-		log.Panicf("failed to check file '%s', '%v'", CCheckIgnoreFileName, err)
+func NewIgnore(path string, afs afero.Afero) *Ignore {
+	return &Ignore{
+		path:     path,
+		patterns: GetPatterns(path, afs),
 	}
-	if !exists {
-		log.Printf("'%s' not found", CCheckIgnoreFileName)
-		return new(CCheckIgnore)
-	}
-	return parse(afs)
 }
 
-func (ccheckignore CCheckIgnore) contains(path string) (bool, error) {
+func (ignore Ignore) Contains(path string) bool {
+	path = filepath.Join("/", path)
 	var hit bool
-	for _, pattern := range ccheckignore.lines {
-
-		// A blank line matches no files.
+	for _, pattern := range ignore.patterns {
+		// A blank line matches nothing
 		if len(pattern) == 0 || pattern == "" {
 			continue
 		}
 
-		// A line starting with # serves as a comment.
+		// A line starting with # is as a comment.
 		if pattern[0] == '#' {
 			continue
 		}
@@ -46,6 +41,10 @@ func (ccheckignore CCheckIgnore) contains(path string) (bool, error) {
 		// Any matching file excluded by a previous pattern will become included again.
 		var negate bool
 		if pattern[0] == '!' {
+			// A single '!' matches nothing
+			if len(pattern) == 1 {
+				continue
+			}
 			pattern = pattern[1:]
 			negate = true
 		}
@@ -58,8 +57,15 @@ func (ccheckignore CCheckIgnore) contains(path string) (bool, error) {
 			pattern = "*" + pattern
 		}
 
+		if !strings.HasPrefix(pattern, "**") {
+			pattern = filepath.Join("/", pattern)
+		}
+
+		if !strings.HasSuffix(pattern, "**") {
+			pattern = pattern + "*"
+		}
+
 		// If a match exists, set the hit flag according to the negation flag
-		pattern = pattern + "*"
 		wildmatcher := wildmatch.NewWildMatch(pattern)
 		if wildmatcher.IsMatch(path) {
 			if negate {
@@ -69,21 +75,34 @@ func (ccheckignore CCheckIgnore) contains(path string) (bool, error) {
 			}
 		}
 	}
-	return hit, nil
+	return hit
 }
 
-func parse(afs afero.Afero) *CCheckIgnore {
-	contents, err := afs.ReadFile(CCheckIgnoreFileName)
+func GetPatterns(path string, afs afero.Afero) []string {
+
+	exists, err := afs.Exists(path)
 	if err != nil {
-		log.Panicf("failed to read file '%s', '%v'", CCheckIgnoreFileName, err)
+		log.Panicf("failed to check file '%s', '%v'", path, err)
 	}
+
+	if !exists {
+		log.Printf("'%s' not found", path)
+		return []string{}
+	}
+
+	contents, err := afs.ReadFile(path)
+	if err != nil {
+		log.Panicf("failed to read file '%s', '%v'", path, err)
+	}
+
 	buffer := bytes.NewBuffer(contents)
 	scanner := bufio.NewScanner(buffer)
-	ccheckignore := new(CCheckIgnore)
+	patterns := []string{}
 	for scanner.Scan() {
 		line := scanner.Text()
 		line = strings.TrimSpace(line)
-		ccheckignore.lines = append(ccheckignore.lines, line)
+		patterns = append(patterns, line)
 	}
-	return ccheckignore
+
+	return patterns
 }

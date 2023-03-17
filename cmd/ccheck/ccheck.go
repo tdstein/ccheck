@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/tdstein/ccheck/internal/ccheck"
 )
@@ -17,8 +19,13 @@ var command = &cobra.Command{
 	Long:    `A fast and flexible copyright linter. Complete documentation is avaiable at https://github.com/tdstein/ccheck.`,
 	Version: Version,
 	Run: func(cmd *cobra.Command, args []string) {
-		// config := ccheck.GetCCheckConfig()
-		ccheck.CCheck()
+		afs := afero.Afero{Fs: afero.NewOsFs()}
+		application := ccheck.NewApplication(afs, ".")
+		exit, err := application.Execute()
+		if err != nil {
+			log.Panic(err)
+		}
+		os.Exit(exit)
 	},
 }
 
