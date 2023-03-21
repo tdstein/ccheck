@@ -7,7 +7,9 @@ if [[ -z "$package" ]]; then
 fi
 
 package_name=`basename $package`
-version=`git describe --always --tags || echo "0.0.0"`
+
+docker pull ghcr.io/choffmeister/git-describe-semver:latest
+version=$(docker run --rm -v $PWD:/workdir ghcr.io/choffmeister/git-describe-semver:latest --fallback "v0.0.0")
 	
 platforms=($(go tool dist list --json | jq '.[] | select( .FirstClass) | .GOOS + "/" + .GOARCH' | tr -d '"'))
 
@@ -17,7 +19,7 @@ do
 	platform_split=(${platform//\// })
 	GOOS=${platform_split[0]}
 	GOARCH=${platform_split[1]}
-	output_name='./bin/'$GOOS'-'$GOARCH/$package_name
+	output_name='./bin/'$package_name'_'$version'_'$GOOS'_'$GOARCH
 	if [ $GOOS = "windows" ]; then
 		output_name+='.exe'
 	fi

@@ -6,6 +6,9 @@ build:
 clean:
     rm -r ./bin/
 
+install:
+    go mod download
+
 run *args:
     go run {{ application }} {{ args }}
 
