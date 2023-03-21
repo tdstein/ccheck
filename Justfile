@@ -9,5 +9,5 @@ clean:
 run *args:
     go run {{ application }} {{ args }}
 
-test:
-    go test -cover -timeout 30s ./... 
+test *args:
+    go test -cover -timeout 30s {{ args }} ./... 

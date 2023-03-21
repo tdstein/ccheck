@@ -10,170 +10,125 @@ import (
 func TestNewIgnore(t *testing.T) {
 	afs := afero.Afero{Fs: afero.NewMemMapFs()}
 	path := ""
-	exp := &Ignore{path: path, patterns: []string{}}
-	res := NewIgnore(path, afs)
+	exp := &Ignore{path: path, patterns: []*IgnorePattern{}}
+	res, _ := NewIgnore(path, afs)
 	assert.Equal(t, exp, res)
 }
 
-func TestGetPatterns_FileDoesNotExist(t *testing.T) {
+func TestGetPatterns(t *testing.T) {
 	afs := afero.Afero{Fs: afero.NewMemMapFs()}
 	path := ".ccheckignore"
-	exp := []string{}
-	res := GetPatterns(path, afs)
-	assert.Equal(t, exp, res)
+	res, _ := ParsePatterns(path, afs)
+	assert.Nil(t, res)
 }
 
-func TestContains(t *testing.T) {
-	tests := []struct {
-		name     string
-		path     string
-		patterns []string
-		exp      bool
-	}{
-		{
-			"no patterns",
-			"",
-			[]string{},
-			false,
-		},
-		{
-			"empty pattern",
-			"empty",
-			[]string{""},
-			false,
-		},
-		{
-			"comment",
-			"comment",
-			[]string{"#"},
-			false,
-		},
-		{
-			"empty negation",
-			"empty negation",
-			[]string{"!"},
-			false,
-		},
-		{
-			"file at root level",
-			"/file",
-			[]string{"file"},
-			true,
-		},
-		{
-			"file in any directory",
-			"/directory/file",
-			[]string{"directory/"},
-			true,
-		},
-		{
-			"file in any directory",
-			"/parent/directory/file",
-			[]string{"directory/"},
-			true,
-		},
-		{
-			"file in relative directory",
-			"/directory/file",
-			[]string{"/directory"},
-			true,
-		},
-		{
-			"file in relative directory",
-			"/directory/file",
-			[]string{"/directory/"},
-			true,
-		},
-		{
-			"file in any directory using wildcards",
-			"/directory/file",
-			[]string{"**/file"},
-			true,
-		},
-		{
-			"file in any directory using wildcards",
-			"/directory/file",
-			[]string{"**/directory/file"},
-			true,
-		},
-		{
-			"any file in directory using wildcards",
-			"/directory/file",
-			[]string{"directory/**"},
-			true,
-		},
-		// TODO - Since this scenario doesn't match the gitignore documentation, check the Wildcard implementation to see if there is an bug.
-		{
-			"file in any subdirectory using wildcards",
-			"directory/file",
-			[]string{"directory/**/file"},
-			false,
-		},
-		{
-			"file in any subdirectory using wildcards",
-			"directory/x/file",
-			[]string{"directory/**/file"},
-			true,
-		},
-		{
-			"file in any subdirectory using wildcards",
-			"directory/x/y/file",
-			[]string{"directory/**/file"},
-			true,
-		},
-		{
-			"file in any subdirectory using wildcards",
-			"directory/x/y/z/file",
-			[]string{"directory/**/file"},
-			true,
-		},
-		{
-			"negation",
-			"file",
-			[]string{
-				"file",
-				"!file",
-			},
-			false,
-		},
-		{
-			"double negation",
-			"file",
-			[]string{
-				"file",
-				"!file",
-				"file",
-			},
-			true,
-		},
-		{
-			"double negation",
-			"file",
-			[]string{
-				"file",
-				"!file",
-				"!file",
-			},
-			false,
-		},
-		{
-			"double negation",
-			"file",
-			[]string{
-				"file",
-				"!file",
-				"file",
-				"!file",
-			},
-			false,
-		},
+func TestNewIgnorePattern(t *testing.T) {
+	type TestCase struct {
+		name  string
+		value string
+		exp   IgnorePattern
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ignore := new(Ignore)
-			ignore.patterns = test.patterns
-			res := ignore.Contains(test.path)
-			assert.Equal(t, test.exp, res)
+
+	cases := []TestCase{
+		{"Empty", "", IgnorePattern{IsNegation: false, Value: ""}},
+		{"Pattern", "pattern", IgnorePattern{IsNegation: false, Value: "pattern"}},
+		{"Negation", "!pattern", IgnorePattern{IsNegation: true, Value: "pattern"}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, _ := NewIgnorePattern(tc.value)
+			assert.Equal(t, tc.exp, *res)
+		})
+	}
+}
+
+func TestNewIgnorePattern_Errors(t *testing.T) {
+	type TestCase struct {
+		name  string
+		value string
+	}
+
+	cases := []TestCase{
+		{"Exclamation", "!"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pattern, err := NewIgnorePattern(tc.value)
+			assert.Nil(t, pattern)
+			assert.Error(t, err)
+		})
+	}
+}
+
+func TestIsBlank(t *testing.T) {
+	type TestCase struct {
+		name  string
+		value string
+		exp   bool
+	}
+
+	cases := []TestCase{
+		{"Empty", "", true},
+		{"Space", " ", true},
+		{"Feed", "\f", true},
+		{"NewLine", "\n", true},
+		{"CarrigeReturn", "\r", true},
+		{"Tab", "\t", true},
+		{"Alpha", "a", false},
+		{"Numeric", "1", false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pattern := IgnorePattern{Value: tc.value}
+			res := pattern.IsBlank()
+			assert.Equal(t, tc.exp, res)
+		})
+	}
+}
+
+func TestIsComment(t *testing.T) {
+	type TestCase struct {
+		name  string
+		value string
+		exp   bool
+	}
+
+	cases := []TestCase{
+		{"Empty", "", false},
+		{"Number", "#", true},
+		{"Escape", "\\#", false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pattern := IgnorePattern{Value: tc.value}
+			res := pattern.IsComment()
+			assert.Equal(t, tc.exp, res)
+		})
+	}
+}
+
+func TestIsNegation(t *testing.T) {
+	type TestCase struct {
+		name  string
+		value string
+		exp   bool
+	}
+
+	cases := []TestCase{
+		{"Empty", "", false},
+		{"Pattern", "pattern", false},
+		{"PatternNegation", "!pattern", true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pattern, _ := NewIgnorePattern(tc.value)
+			res := pattern.IsNegation
+			assert.Equal(t, tc.exp, res)
 		})
 	}
 }

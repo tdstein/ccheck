@@ -1,1 +1,2 @@
-bin/**
+*.go
+!*_test.go
