@@ -3,36 +3,20 @@ package ccheck
 import (
 	"testing"
 
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewIgnore(t *testing.T) {
-	afs := afero.Afero{Fs: afero.NewMemMapFs()}
-	path := ""
-	exp := &Ignore{path: path, patterns: []*IgnorePattern{}}
-	res, _ := NewIgnore(path, afs)
-	assert.Equal(t, exp, res)
-}
-
-func TestGetPatterns(t *testing.T) {
-	afs := afero.Afero{Fs: afero.NewMemMapFs()}
-	path := ".ccheckignore"
-	res, _ := ParsePatterns(path, afs)
-	assert.Nil(t, res)
-}
-
-func TestNewIgnorePattern(t *testing.T) {
+func TestNew(t *testing.T) {
 	type TestCase struct {
 		name  string
 		value string
-		exp   IgnorePattern
+		exp   CCheckIgnorePattern
 	}
 
 	cases := []TestCase{
-		{"Empty", "", IgnorePattern{IsNegation: false, Value: ""}},
-		{"Pattern", "pattern", IgnorePattern{IsNegation: false, Value: "pattern"}},
-		{"Negation", "!pattern", IgnorePattern{IsNegation: true, Value: "pattern"}},
+		{"Empty", "", CCheckIgnorePattern{IsNegation: false, Value: ""}},
+		{"Pattern", "pattern", CCheckIgnorePattern{IsNegation: false, Value: "pattern"}},
+		{"Negation", "!pattern", CCheckIgnorePattern{IsNegation: true, Value: "pattern"}},
 	}
 
 	for _, tc := range cases {
@@ -43,7 +27,7 @@ func TestNewIgnorePattern(t *testing.T) {
 	}
 }
 
-func TestNewIgnorePattern_Errors(t *testing.T) {
+func TestNewErrors(t *testing.T) {
 	type TestCase struct {
 		name  string
 		value string
@@ -82,7 +66,7 @@ func TestIsBlank(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			pattern := IgnorePattern{Value: tc.value}
+			pattern := CCheckIgnorePattern{Value: tc.value}
 			res := pattern.IsBlank()
 			assert.Equal(t, tc.exp, res)
 		})
@@ -104,7 +88,7 @@ func TestIsComment(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			pattern := IgnorePattern{Value: tc.value}
+			pattern := CCheckIgnorePattern{Value: tc.value}
 			res := pattern.IsComment()
 			assert.Equal(t, tc.exp, res)
 		})

@@ -1,37 +1,26 @@
 package ccheck
 
-import (
-	"fmt"
-	"log"
+import "github.com/spf13/afero"
 
-	"github.com/spf13/afero"
-)
-
-type Application struct {
-	afs        afero.Afero
-	entrypoint string
+type CCheckApplication struct {
+	linter *CCheckLinter
 }
 
-func NewApplication(afs afero.Afero, entrypoint string) *Application {
-	return &Application{
-		afs:        afs,
-		entrypoint: entrypoint,
-	}
-}
-
-func (application Application) Execute() (int, error) {
-	service := &Service{
-		afs: application.afs,
-	}
-
-	files, err := service.GetFiles()
+func NewCCheckApplication(path string, afs afero.Afero) (*CCheckApplication, error) {
+	scanner, err := NewCCheckScanner(".", afs)
 	if err != nil {
-		log.Panic(err)
+		return nil, err
 	}
 
-	for _, file := range files {
-		fmt.Println(file)
+	ignore, err := NewCCheckIgnore(".ccheckignore", afs)
+	if err != nil {
+		return nil, err
 	}
 
-	return 0, nil
+	linter := NewCCheckLinter(scanner, ignore)
+	return &CCheckApplication{linter: linter}, nil
+}
+
+func (app *CCheckApplication) Execute(config *CCheckConfig) error {
+	return app.linter.Lint(config)
 }

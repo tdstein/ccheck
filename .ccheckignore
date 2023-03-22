@@ -1,2 +1,8 @@
-*.go
-!*_test.go
+.git/*
+.github/*
+bin/*
+.ccheck
+.gitignore
+Justfile
+go.sum
+go.mod

@@ -6,7 +6,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-type CCheckConfig struct{}
+type CCheckConfig struct {
+	copyright CCheckCopyright
+}
+
+func NewCCheckConfig() *CCheckConfig {
+	copyright := new(CCheckCopyright)
+	return &CCheckConfig{
+		copyright: *copyright,
+	}
+}
 
 func GetCCheckConfig() (config CCheckConfig) {
 	viper.SetConfigFile(".ccheck")

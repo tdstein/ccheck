@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/spf13/afero"
@@ -20,12 +19,18 @@ var command = &cobra.Command{
 	Version: Version,
 	Run: func(cmd *cobra.Command, args []string) {
 		afs := afero.Afero{Fs: afero.NewOsFs()}
-		application := ccheck.NewApplication(afs, ".")
-		exit, err := application.Execute()
+		app, err := ccheck.NewCCheckApplication(".", afs)
 		if err != nil {
-			log.Panic(err)
+			panic(err)
 		}
-		os.Exit(exit)
+
+		config := ccheck.NewCCheckConfig()
+		err = app.Execute(config)
+		if err != nil {
+			panic(err)
+		}
+
+		os.Exit(0)
 	},
 }
 
