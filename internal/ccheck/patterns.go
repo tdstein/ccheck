@@ -10,10 +10,10 @@ type CCheckIgnorePattern struct {
 	Value      string
 }
 
-// Creates a new IgnorePattern struct.
+// Creates a new CCheckIgnorePattern struct.
 //
 // If the value begins with a '!', the IsNegation flag is set to true and the character is removed.
-func NewIgnorePattern(value string) (*CCheckIgnorePattern, error) {
+func NewCCheckIgnorePattern(value string) (*CCheckIgnorePattern, error) {
 	if len(value) == 1 && value[0] == '!' {
 		return nil, fmt.Errorf("pattern cannot be a single '!'")
 	}

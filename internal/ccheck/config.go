@@ -7,17 +7,10 @@ import (
 )
 
 type CCheckConfig struct {
-	copyright CCheckCopyright
+	copyright *CCheckCopyright
 }
 
-func NewCCheckConfig() *CCheckConfig {
-	copyright := new(CCheckCopyright)
-	return &CCheckConfig{
-		copyright: *copyright,
-	}
-}
-
-func GetCCheckConfig() (config CCheckConfig) {
+func GetCCheckConfig() (config *CCheckConfig) {
 	viper.SetConfigFile(".ccheck")
 	viper.SetConfigType("toml")
 
@@ -27,5 +20,8 @@ func GetCCheckConfig() (config CCheckConfig) {
 	}
 
 	viper.Unmarshal(&config)
+	config.copyright = NewCCheckCopyright(&[]string{
+		"Copyright (c) 2023 Taylor Steinberg",
+	})
 	return
 }

@@ -6,7 +6,7 @@ type CCheckApplication struct {
 	linter *CCheckLinter
 }
 
-func NewCCheckApplication(path string, afs afero.Afero) (*CCheckApplication, error) {
+func NewCCheckApplication(path string, afs *afero.Afero) (*CCheckApplication, error) {
 	scanner, err := NewCCheckScanner(".", afs)
 	if err != nil {
 		return nil, err
@@ -22,5 +22,8 @@ func NewCCheckApplication(path string, afs afero.Afero) (*CCheckApplication, err
 }
 
 func (app *CCheckApplication) Execute(config *CCheckConfig) error {
-	return app.linter.Lint(config)
+	violations := &[]CCheckViolation{
+		NewCCheckViolationC000(config.copyright),
+	}
+	return app.linter.Lint(violations)
 }

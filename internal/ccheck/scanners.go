@@ -13,7 +13,7 @@ type CCheckScanner struct {
 	pos   int
 }
 
-func NewCCheckScanner(path string, afs afero.Afero) (*CCheckScanner, error) {
+func NewCCheckScanner(path string, afs *afero.Afero) (*CCheckScanner, error) {
 	files, err := GetFiles(path, afs)
 	if err != nil {
 		return nil, err
@@ -29,17 +29,17 @@ func (scanner *CCheckScanner) HasNext() bool {
 	return scanner.pos < scanner.size
 }
 
-func (scanner *CCheckScanner) Next() CCheckFile {
+func (scanner *CCheckScanner) Next() *CCheckFile {
 	cur := (*scanner.files)[scanner.pos]
 	scanner.pos += 1
-	return cur
+	return &cur
 }
 
-func GetFiles(path string, afs afero.Afero) (*[]CCheckFile, error) {
+func GetFiles(path string, afs *afero.Afero) (*[]CCheckFile, error) {
 	files := new([]CCheckFile)
 	err := afs.Walk(path, func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() {
-			file := NewCCheckFile(path)
+			file := NewCCheckFile(path, afs)
 			*files = append(*files, *file)
 		}
 		return nil

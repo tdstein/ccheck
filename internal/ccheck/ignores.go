@@ -16,7 +16,7 @@ type CCheckIgnore struct {
 }
 
 // Creates a new CCheckIgnore struct.
-func NewCCheckIgnore(path string, afs afero.Afero) (*CCheckIgnore, error) {
+func NewCCheckIgnore(path string, afs *afero.Afero) (*CCheckIgnore, error) {
 	pattern, err := ParsePatterns(path, afs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ignore struct: %w", err)
@@ -28,7 +28,7 @@ func NewCCheckIgnore(path string, afs afero.Afero) (*CCheckIgnore, error) {
 }
 
 // ParsePatterns reads patterns from a filepath.
-func ParsePatterns(filepath string, afs afero.Afero) ([]*CCheckIgnorePattern, error) {
+func ParsePatterns(filepath string, afs *afero.Afero) ([]*CCheckIgnorePattern, error) {
 
 	exists, err := afs.Exists(filepath)
 	if err != nil {
@@ -50,7 +50,7 @@ func ParsePatterns(filepath string, afs afero.Afero) ([]*CCheckIgnorePattern, er
 	for scanner.Scan() {
 		line := scanner.Text()
 		line = strings.TrimSpace(line)
-		pattern, err := NewIgnorePattern(line)
+		pattern, err := NewCCheckIgnorePattern(line)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse line '%s': %w", line, err)
 		}

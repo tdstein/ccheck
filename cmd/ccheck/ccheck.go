@@ -19,12 +19,12 @@ var command = &cobra.Command{
 	Version: Version,
 	Run: func(cmd *cobra.Command, args []string) {
 		afs := afero.Afero{Fs: afero.NewOsFs()}
-		app, err := ccheck.NewCCheckApplication(".", afs)
+		app, err := ccheck.NewCCheckApplication(".", &afs)
 		if err != nil {
 			panic(err)
 		}
 
-		config := ccheck.NewCCheckConfig()
+		config := ccheck.GetCCheckConfig()
 		err = app.Execute(config)
 		if err != nil {
 			panic(err)

@@ -21,7 +21,7 @@ func TestNew(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			res, _ := NewIgnorePattern(tc.value)
+			res, _ := NewCCheckIgnorePattern(tc.value)
 			assert.Equal(t, tc.exp, *res)
 		})
 	}
@@ -39,7 +39,7 @@ func TestNewErrors(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			pattern, err := NewIgnorePattern(tc.value)
+			pattern, err := NewCCheckIgnorePattern(tc.value)
 			assert.Nil(t, pattern)
 			assert.Error(t, err)
 		})
@@ -110,7 +110,7 @@ func TestIsNegation(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			pattern, _ := NewIgnorePattern(tc.value)
+			pattern, _ := NewCCheckIgnorePattern(tc.value)
 			res := pattern.IsNegation
 			assert.Equal(t, tc.exp, res)
 		})
