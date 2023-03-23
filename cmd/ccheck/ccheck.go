@@ -32,7 +32,7 @@ import (
 )
 
 var IgnoreFile string = ".ccheckignore"
-var Version string = "local"
+var Version string = "dev"
 
 var command = &cobra.Command{
 	Use:     "ccheck",
