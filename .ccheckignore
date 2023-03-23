@@ -1,8 +1,5 @@
-.git/*
-.github/*
-bin/*
-.ccheck
-.gitignore
-Justfile
-go.sum
-go.mod
+*
+
+!cmd/*
+!internal/*
+!scripts/*
