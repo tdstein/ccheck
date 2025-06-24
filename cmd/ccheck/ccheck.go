@@ -35,13 +35,19 @@ var IgnoreFile string = ".ccheckignore"
 var Version string = "dev"
 
 var command = &cobra.Command{
-	Use:     "ccheck",
+	Use:     "ccheck [path]",
 	Short:   "ccheck is a fast copyright linter",
-	Long:    `A fast and flexible copyright linter. Complete documentation is avaiable at https://github.com/tdstein/ccheck.`,
+	Long:    `A fast and flexible copyright linter. Complete documentation is available at https://github.com/tdstein/ccheck.`,
 	Version: Version,
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		path := "."
+		if len(args) > 0 {
+			path = args[0]
+		}
+
 		afs := afero.Afero{Fs: afero.NewOsFs()}
-		app, err := ccheck.NewCCheckApplication(".", &afs)
+		app, err := ccheck.NewCCheckApplication(path, &afs)
 		if err != nil {
 			panic(err)
 		}

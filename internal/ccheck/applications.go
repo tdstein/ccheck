@@ -31,7 +31,7 @@ type CCheckApplication struct {
 }
 
 func NewCCheckApplication(path string, afs *afero.Afero) (*CCheckApplication, error) {
-	scanner, err := NewCCheckScanner(".", afs)
+	scanner, err := NewCCheckScanner(path, afs)
 	if err != nil {
 		return nil, err
 	}
