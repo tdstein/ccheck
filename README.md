@@ -10,7 +10,7 @@ Use the `.ccheckignore` file to ignore certain files or directories. It uses the
 
 ```shell
 just build
-``
+```
 
 This will build the ccheck binary in the `./bin` directory.
 
