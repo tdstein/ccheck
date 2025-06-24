@@ -1,6 +1,6 @@
 module github.com/tdstein/ccheck
 
-go 1.20
+go 1.24
 
 require (
 	github.com/becheran/wildmatch-go v1.0.0
